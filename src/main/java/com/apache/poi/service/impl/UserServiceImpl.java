@@ -1,6 +1,7 @@
 package com.apache.poi.service.impl;
 
 import com.apache.poi.entity.User;
+import com.apache.poi.entity.UserExtraField;
 import com.apache.poi.repository.UserRepository;
 import com.apache.poi.service.EmailService;
 import com.apache.poi.service.UserService;
@@ -70,16 +71,42 @@ public class UserServiceImpl implements UserService {
         Workbook workbook = new XSSFWorkbook(file.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
 
+        Row headerRow = sheet.getRow(0);
+        int columnCount = headerRow.getLastCellNum();
+
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row != null) {
                 User user = new User();
-                user.setEmail(getCellValueAsString(row.getCell(0)));
-                user.setInsertDate(LocalDate.parse(getCellValueAsString(row.getCell(1))));
-                user.setUsername(getCellValueAsString(row.getCell(2)));
+
+                List<UserExtraField> extraFields = new ArrayList<>();
+
+                for (int j = 0; j < columnCount; j++) {
+                    String header = getCellValueAsString(headerRow.getCell(j));
+                    String value = getCellValueAsString(row.getCell(j));
+
+                    switch (header.toLowerCase()){
+                        case "username":
+                            user.setUsername(getCellValueAsString(row.getCell(2)));
+                            break;
+                        case "email":
+                            user.setEmail(getCellValueAsString(row.getCell(0)));
+                            break;
+                        case "insert_date":
+                            user.setInsertDate(LocalDate.parse(getCellValueAsString(row.getCell(1))));
+                            break;
+                        default:
+                            UserExtraField extra = new UserExtraField();
+                            extra.setFieldKey(header);
+                            extra.setFieldValue(value);
+                            extra.setUser(user);
+                            extraFields.add(extra);
+                    }
+
+                }
+                user.setExtraFields(extraFields);
                 userList.add(user);
             }
-
         }
 
         userRepository.saveAll(userList);

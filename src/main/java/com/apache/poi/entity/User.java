@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -19,4 +21,7 @@ public class User {
     private String username;
     private String email;
     private LocalDate insertDate;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserExtraField> extraFields = new ArrayList<>();
 }
